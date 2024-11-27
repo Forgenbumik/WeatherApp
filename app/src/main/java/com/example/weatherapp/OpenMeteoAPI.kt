@@ -6,10 +6,17 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
 import kotlinx.coroutines.*
+import okhttp3.logging.HttpLoggingInterceptor
 
 class OpenMeteoAPI(
     private val baseUrl: String = "https://api.open-meteo.com/v1/forecast",
-    private val client: OkHttpClient = OkHttpClient()
+    val loggingInterceptor: HttpLoggingInterceptor = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    },
+
+    val client: OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
+        .build()
 ) {
     private val gson = Gson()
 
