@@ -9,11 +9,26 @@ data class CurrentWeather (
     @SerializedName("current"   ) var current   : CurrentResponse? = CurrentResponse()
 )
 
-data class Daily (
+data class DailyforCurrent (
 
     @SerializedName("time"   ) var time   : String? = null,
     @SerializedName("sunrise") var sunrise: String? = null,
     @SerializedName("sunset" ) var sunset : String? = null
+)
+
+data class Daily (
+
+    @SerializedName("time"               ) var time             : ArrayList<String> = arrayListOf(),
+    @SerializedName("weather_code"       ) var weatherCode      : ArrayList<Int>    = arrayListOf(),
+    @SerializedName("temperature_2m_max" ) var temperature2mMax : ArrayList<Double> = arrayListOf(),
+    @SerializedName("temperature_2m_min" ) var temperature2mMin : ArrayList<Double> = arrayListOf()
+
+)
+
+data class DailyForecast (
+
+    @SerializedName("daily") var daily : ArrayList<Daily>? = arrayListOf()
+
 )
 
 data class Hourly (
@@ -28,5 +43,5 @@ data class Hourly (
 )
 
 data class HourlyForecast(
-    @SerializedName("hourly") var hourly: ArrayList<String> = arrayListOf()
+    @SerializedName("hourly") var hourly: ArrayList<Hourly> = arrayListOf()
 )
