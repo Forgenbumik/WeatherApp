@@ -6,18 +6,28 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowColumn
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import com.example.weatherapp.ui.theme.WeatherAppTheme
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.android.gms.common.util.Clock
+import java.time.LocalDate
 
 
 class MainActivity : ComponentActivity() {
@@ -25,48 +35,28 @@ class MainActivity : ComponentActivity() {
 
     val weatherViewModel: WeatherViewModel by viewModels()
 
-    private lateinit var locationViewer: LocationViewer
-
     override fun onCreate(savedInstanceState: Bundle?) {
+        weatherViewModel.fetchWeather()
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         val isDarkTheme = mutableStateOf(true)
         val isCelsius = mutableStateOf(true)
         val city = mutableStateOf("")
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             WeatherAppTheme {
                 Row(
                     horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.verticalScroll(ScrollState(0))
                 ) {
-                    showCurrentWeather(weatherViewModel)
+                    ShowCurrentWeather(isCelsius = isCelsius)
+                    ShowHourlyForecast(isCelsius = isCelsius)
                 }
             }
         }
 
-        locationViewer = LocationViewer(this)
-        locationViewer.getLastKnownLocation(object : LocationCallback {
-            override fun onLocationReceived(latitude: Double, longitude: Double) {
-                weatherViewModel.fetchWeather(latitude, longitude)
-                }
-        })
-    }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    WeatherAppTheme {
-        Greeting("Android")
     }
 }
 
@@ -75,43 +65,131 @@ fun City(city: String) {
     Text(city)
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun showCurrentWeather(viewModel: WeatherViewModel = viewModel()) {
+fun ShowCurrentWeather(viewModel: WeatherViewModel = viewModel(), isCelsius: State<Boolean>) {
 
     val weather = viewModel.weather.observeAsState().value
     if (weather != null) {
-        currentTemp(weather.current?.temperature2m, measure)
-        weatherCondition(weather.current?.weatherCode)
-        apparentTemp(apparentTemp, measure)
+        FlowColumn(
+            modifier = Modifier
+                .fillMaxHeight(0.4f) // 50% высоты экрана
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.Bottom
+        ) {
+            CurrentTemp(weather.current?.temperature2m, isCelsius)
+            WeatherCondition(weather.current?.weatherCode)
+            ApparentTemp(weather.current?.apparentTemperature, isCelsius)
+            WindCondition(weather.current?.windSpeed10m, weather.current?.windDirection10m)
+        }
     }
 }
 
 @Composable
-fun currentTemp(temp: Double?, isCelsius: Recomposer.State<Boolean>) {
-    Text("$temp", fontSize = 28.sp)
+fun CurrentTemp(temp: Double?, isCelsius: State<Boolean>) {
+    var measure: String
+    var temperature: Double
+    if (isCelsius.value) {
+        measure = "°C"
+    }
+    else {
+        if (temp != null) {
+            temperature = temp * 1.8+32
+        }
+        measure = "°F"
+    }
+    Text("$temp$measure", fontSize = 28.sp)
 }
 
 @Composable
-fun weatherCondition(condition: Int?) {
+fun WeatherCondition(condition: Int?) {
     Text("$condition")
 }
 
 @Composable
-fun apparentTemp(temp: Int, measure: String) {
-    Text("Ощущается как $temp°$measure")
+fun ApparentTemp(temp: Double?, isCelsius: State<Boolean>) {
+    var measure: String
+    var temperature: Double
+    if (isCelsius.value) {
+        measure = "°C"
+    }
+    else {
+        if (temp != null) {
+            temperature = temp * 1.8+32
+        }
+        measure = "°F"
+    }
+    Text("Ощущается как $temp$measure")
 }
 
 @Composable
-fun windCondition(windSpeed: Int, windDirection: String) {
+fun WindCondition(windSpeed: Double?, windDirection: Int?) {
     Text("Ветер: $windSpeed м/с, $windDirection")
 }
 
 @Composable
-fun humidity(humidity: Int) {
+fun Humidity(humidity: Int) {
     Text("Влажность: $humidity%")
 }
 
 @Composable
-fun showHourlyForecast() {
+fun ShowHourlyForecast(viewModel: WeatherViewModel = viewModel(), isCelsius: State<Boolean>) {
+    val weather = viewModel.hourlyForecast.value
+    if (weather != null) {
+        Column(
+            Modifier.horizontalScroll(ScrollState(0))
+        ) {
+            for (i in 0..23) {
+                //HourWeather(weather.hourly[i].temperature2m[i], weather.hourly[i].weatherCode[i])
+            }
+        }
+    }
+}
+
+@Composable
+fun HourWeather(temp: Double, isCelsius: State<Boolean>, weatherCondition: Int) {
+    var measure: String
+    var temperature: Double
+    if (isCelsius.value) {
+        measure = "°C"
+    }
+    else {
+        if (temp != null) {
+            temperature = temp * 1.8+32
+        }
+        measure = "°F"
+    }
+    Column {
+        Text("$weatherCondition")
+        Text("$temp°")
+    }
+}
+
+@Composable
+fun ShowDailyForecast(viewModel: WeatherViewModel = viewModel(), isCelsius: State<Boolean>) {
+
+    val days = mapOf(0 to "Понедельник", 1 to "Вторник", 2 to "Среда", 3 to "Четверг",
+        4 to "Пятница", 5 to "Суббота", 6 to "Воскресенье")
+    val today = LocalDate.now().dayOfWeek
+    val people = mapOf(1 to "Понедельник", 5 to "Sam", 8 to "Bob")
+    val weather = viewModel.dailyForecast.value
+    if (weather != null) {
+        Column {
+            for (i in 0..6) {
+                //DailyWeather(days[i], weather.temperature2mMax)
+            }
+        }
+    }
+}
+
+@Composable
+fun DailyWeather(Day: String, maxTemp: Double, minTemp: Double, weatherCondition: Int) {
+    Row {
+        Text(Day)
+        Text("$maxTemp°")
+        Text("$minTemp°")
+        Text("$weatherCondition")
+    }
 
 }
