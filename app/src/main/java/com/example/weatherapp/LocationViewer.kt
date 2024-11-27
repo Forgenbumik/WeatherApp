@@ -9,9 +9,6 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import android.util.Log
 
-interface LocationCallback {
-    fun onLocationReceived(latitude: Double, longitude: Double)
-}
 
 class LocationViewer(private val context: Context) {
     private var fusedLocationClient: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
@@ -20,7 +17,7 @@ class LocationViewer(private val context: Context) {
 
     var longitude: Double = 0.0
 
-    fun getLastKnownLocation(callback: LocationCallback) {
+    fun getLastKnownLocation() {
         if (ActivityCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -35,9 +32,8 @@ class LocationViewer(private val context: Context) {
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location->
                 if (location != null) {
-                    Log.d("LocationViewer", "Location obtained: Lat=$latitude, Lng=$longitude")
-                    callback.onLocationReceived(location.latitude, location.longitude)
-
+                    latitude = location.latitude
+                    longitude = location.longitude
                 } else {
                     Log.e("LocationViewer", "Location is null")
                 }
