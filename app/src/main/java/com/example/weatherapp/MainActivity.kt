@@ -33,7 +33,7 @@ import java.time.LocalDate
 class MainActivity : ComponentActivity() {
     private val openMeteoAPI = OpenMeteoAPI()
 
-    val weatherViewModel: WeatherViewModel by viewModels()
+    private val weatherViewModel: WeatherViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         weatherViewModel.fetchWeather()
@@ -88,8 +88,8 @@ fun ShowCurrentWeather(viewModel: WeatherViewModel = viewModel(), isCelsius: Sta
 
 @Composable
 fun CurrentTemp(temp: Double?, isCelsius: State<Boolean>) {
-    var measure: String
-    var temperature: Double
+    val measure: String
+    val temperature: Double
     if (isCelsius.value) {
         measure = "°C"
     }
@@ -109,8 +109,8 @@ fun WeatherCondition(condition: Int?) {
 
 @Composable
 fun ApparentTemp(temp: Double?, isCelsius: State<Boolean>) {
-    var measure: String
-    var temperature: Double
+    val measure: String
+    val temperature: Double
     if (isCelsius.value) {
         measure = "°C"
     }
@@ -141,7 +141,7 @@ fun ShowHourlyForecast(viewModel: WeatherViewModel = viewModel(), isCelsius: Sta
             Modifier.horizontalScroll(ScrollState(0))
         ) {
             for (i in 0..23) {
-                //HourWeather(weather.hourly[i].temperature2m[i], weather.hourly[i].weatherCode[i])
+                HourWeather(weather.hourly[i].temperature2m[i], isCelsius, weather.hourly[i].weatherCode[i])
             }
         }
     }
@@ -149,15 +149,13 @@ fun ShowHourlyForecast(viewModel: WeatherViewModel = viewModel(), isCelsius: Sta
 
 @Composable
 fun HourWeather(temp: Double, isCelsius: State<Boolean>, weatherCondition: Int) {
-    var measure: String
-    var temperature: Double
+    val measure: String
+    val temperature: Double
     if (isCelsius.value) {
         measure = "°C"
     }
     else {
-        if (temp != null) {
-            temperature = temp * 1.8+32
-        }
+        temperature = temp * 1.8+32
         measure = "°F"
     }
     Column {
@@ -177,16 +175,18 @@ fun ShowDailyForecast(viewModel: WeatherViewModel = viewModel(), isCelsius: Stat
     if (weather != null) {
         Column {
             for (i in 0..6) {
-                //DailyWeather(days[i], weather.temperature2mMax)
+                DailyWeather(days[i], weather.temperature2mMax[i], weather.temperature2mMin[i], isCelsius, weather.weatherCode[i])
             }
         }
     }
 }
 
 @Composable
-fun DailyWeather(Day: String, maxTemp: Double, minTemp: Double, weatherCondition: Int) {
+fun DailyWeather(Day: String?, maxTemp: Double, minTemp: Double, isCelsius: State<Boolean>, weatherCondition: Int) {
     Row {
-        Text(Day)
+        if (Day != null) {
+            Text(Day)
+        }
         Text("$maxTemp°")
         Text("$minTemp°")
         Text("$weatherCondition")
